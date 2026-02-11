@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meteoros Dashboard | Telemetria</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0d0f14;
+            --card-bg: #161a23;
+            --accent-cyan: #00f2ff;
+            --accent-orange: #ff4b2b;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+            padding: 2rem;
+        }
+
+        /* Background effects */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -10%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(0, 242, 255, 0.05) 0%, transparent 70%);
+            z-index: -1;
+        }
+
+        header {
+            max-width: 1200px;
+            margin: 0 auto 3rem auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -2px;
+            background: linear-gradient(to right, #fff, var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .refresh-status {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto 3rem auto;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            border: 1px solid var(--glass-border);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-cyan);
+        }
+
+        .stat-card h3 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+
+        .stat-card .value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+
+        .stat-card .unit {
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+
+        /* Table Style */
+        .table-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--glass-bg);
+            border-radius: 1.5rem;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+            animation: slideUp 0.8s ease-out;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1.2rem 1.5rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.9rem;
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 2rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-on {
+            background: rgba(0, 242, 255, 0.1);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(0, 242, 255, 0.2);
+        }
+
+        .status-off {
+            background: rgba(255, 75, 43, 0.1);
+            color: var(--accent-orange);
+            border: 1px solid rgba(255, 75, 43, 0.2);
+        }
+
+        .timestamp {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-secondary);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Error state */
+        .error-banner {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 1rem;
+            background: rgba(255, 75, 43, 0.1);
+            border-left: 4px solid var(--accent-orange);
+            color: var(--accent-orange);
+            border-radius: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 1rem; }
+            header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+            h1 { font-size: 1.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1>METEOROS_OS</h1>
+            <p style="color: var(--text-secondary);">Sistema de Monitoramento de Estações</p>
+        </div>
+        <div class="refresh-status">
+            LAST_UPDATE: {{ dados[0].timestamp if dados else 'N/A' }}
+        </div>
+    </header>
+
+    {% if error %}
+    <div class="error-banner">
+        <strong>Erro de Conexão:</strong> {{ error }}
+    </div>
+    {% endif %}
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Estações Mapeadas</h3>
+            <div class="value">{{ total }} <span class="unit">leituras</span></div>
+        </div>
+        <div class="stat-card">
+            <h3>Sinal Ativo</h3>
+            <div class="value" style="color: var(--accent-cyan);">{{ ativas }} <span class="unit">nodos</span></div>
+        </div>
+        <div class="stat-card">
+            <h3>Uptime</h3>
+            <div class="value" style="color: #fff;">99.8 <span class="unit">%</span></div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Estação</th>
+                    <th>Status</th>
+                    <th>Timestamp</th>
+                    <th>ID</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in dados %}
+                <tr>
+                    <td style="font-weight: 600;">{{ item.nome }}</td>
+                    <td>
+                        <span class="status-badge {{ 'status-on' if item.status else 'status-off' }}">
+                            {{ 'Online' if item.status else 'Offline' }}
+                        </span>
+                    </td>
+                    <td class="timestamp">{{ item.timestamp }}</td>
+                    <td style="color: #333; font-size: 0.7rem;">{{ item.id }}</td>
+                </tr>
+                {% endfor %}
+                {% if not dados %}
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+                        Nenhum dado encontrado no banco.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Auto refresh a cada 30 segundos
+        setTimeout(() => {
+            window.location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>
