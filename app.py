@@ -31,7 +31,14 @@ def index():
         total_leituras = len(dados)
         estacoes_ativas = len(set([d['nome'] for d in dados if d.get('status') is True]))
         
-        return render_template("index.html", dados=dados, total=total_leituras, ativas=estacoes_ativas)
+        return render_template(
+            "index.html", 
+            dados=dados, 
+            total=total_leituras, 
+            ativas=estacoes_ativas,
+            supabase_url=SUPABASE_URL,
+            supabase_key=SUPABASE_KEY
+        )
     except Exception as e:
         print(f"❌ Erro ao buscar dados: {e}")
         return render_template("index.html", error=str(e), dados=[])

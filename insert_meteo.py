@@ -50,7 +50,17 @@ def inserir_dados_estacao(nome_estacao: str = "ESTACAO01", status: bool = True):
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] ❌ Erro ao inserir no banco: {e}")
         return None
 
+import sys
+
 if __name__ == "__main__":
     # Teste de execução
     print("🚀 Iniciando script de inserção...")
-    inserir_dados_estacao(ESTACAO)
+    
+    # Se passar um argumento via linha de comando, usa ele como nome da estação
+    # Exemplo: python insert_meteo.py ESTACAO_ALPHA
+    if len(sys.argv) > 1:
+        estacao_alvo = sys.argv[1]
+    else:
+        estacao_alvo = ESTACAO or "ESTACAO_PADRAO"
+
+    inserir_dados_estacao(estacao_alvo)

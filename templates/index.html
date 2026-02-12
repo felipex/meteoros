@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meteoros Dashboard | Telemetria</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
     <style>
         :root {
             --bg-color: #0d0f14;
@@ -179,8 +182,15 @@
         }
 
         @keyframes slideUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         /* Error state */
@@ -195,12 +205,23 @@
         }
 
         @media (max-width: 768px) {
-            body { padding: 1rem; }
-            header { flex-direction: column; align-items: flex-start; gap: 1rem; }
-            h1 { font-size: 1.8rem; }
+            body {
+                padding: 1rem;
+            }
+
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
         }
     </style>
 </head>
+
 <body>
 
     <header>
@@ -208,7 +229,7 @@
             <h1>METEOROS_OS</h1>
             <p style="color: var(--text-secondary);">Sistema de Monitoramento de Estações</p>
         </div>
-        <div class="refresh-status">
+        <div class="refresh-status" id="last-update">
             LAST_UPDATE: {{ dados[0].timestamp if dados else 'N/A' }}
         </div>
     </header>
@@ -222,11 +243,12 @@
     <div class="stats-grid">
         <div class="stat-card">
             <h3>Estações Mapeadas</h3>
-            <div class="value">{{ total }} <span class="unit">leituras</span></div>
+            <div class="value"><span id="total-leituras">{{ total }}</span> <span class="unit">leituras</span></div>
         </div>
         <div class="stat-card">
             <h3>Sinal Ativo</h3>
-            <div class="value" style="color: var(--accent-cyan);">{{ ativas }} <span class="unit">nodos</span></div>
+            <div class="value" style="color: var(--accent-cyan);"><span id="estacoes-ativas">{{ ativas }}</span> <span
+                    class="unit">nodos</span></div>
         </div>
         <div class="stat-card">
             <h3>Uptime</h3>
@@ -244,7 +266,7 @@
                     <th>ID</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="table-body">
                 {% for item in dados %}
                 <tr>
                     <td style="font-weight: 600;">{{ item.nome }}</td>
@@ -258,7 +280,7 @@
                 </tr>
                 {% endfor %}
                 {% if not dados %}
-                <tr>
+                <tr id="no-data-row">
                     <td colspan="4" style="text-align: center; padding: 3rem; color: var(--text-secondary);">
                         Nenhum dado encontrado no banco.
                     </td>
@@ -268,11 +290,94 @@
         </table>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // Auto refresh a cada 30 segundos
-        setTimeout(() => {
-            window.location.reload();
-        }, 30000);
+        // Configuração do Supabase Client
+        const supabaseUrl = "{{ supabase_url }}";
+        const supabaseKey = "{{ supabase_key }}";
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        const tableBody = document.getElementById('table-body');
+        const totalLeiturasEl = document.getElementById('total-leituras');
+        const estacoesAtivasEl = document.getElementById('estacoes-ativas');
+        const lastUpdateEl = document.getElementById('last-update');
+        const noDataRow = document.getElementById('no-data-row');
+
+        // Estado local para manter sincronia com os últimos registros
+        const initialData = {{ dados | tojson | safe }};
+        let currentData = [...initialData];
+        let totalCount = parseInt(totalLeiturasEl.innerText);
+
+        function updateMetrics() {
+            // Conta estações únicas que possuem status true nos registros atuais
+            const activeSet = new Set(
+                currentData
+                    .filter(item => item.status === true)
+                    .map(item => item.nome)
+            );
+
+            estacoesAtivasEl.innerText = activeSet.size;
+            totalLeiturasEl.innerText = totalCount;
+        }
+
+        // Inscrição em Tempo Real
+        _supabase
+            .channel('db-changes')
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'estacoes' },
+                (payload) => {
+                    const newData = payload.new;
+                    console.log('Nova inserção detectada:', newData);
+
+                    if (noDataRow) noDataRow.remove();
+
+                    // 1. Atualizar Array Local
+                    currentData.unshift(newData);
+                    if (currentData.length > 50) currentData.pop();
+
+                    // 2. Criar nova linha para a tabela com animação
+                    const row = document.createElement('tr');
+                    row.style.animation = 'slideUp 0.5s ease-out, highlight 2s ease-out';
+
+                    const statusClass = newData.status ? 'status-on' : 'status-off';
+                    const statusText = newData.status ? 'Online' : 'Offline';
+
+                    row.innerHTML = `
+                        <td style="font-weight: 600;">${newData.nome}</td>
+                        <td>
+                            <span class="status-badge ${statusClass}">
+                                ${statusText}
+                            </span>
+                        </td>
+                        <td class="timestamp">${newData.timestamp}</td>
+                        <td style="color: #333; font-size: 0.7rem;">${newData.id}</td>
+                    `;
+
+                    // 3. Inserir no topo da tabela
+                    tableBody.insertBefore(row, tableBody.firstChild);
+                    if (tableBody.children.length > 50) {
+                        tableBody.removeChild(tableBody.lastChild);
+                    }
+
+                    // 4. Atualizar Métricas e UI
+                    totalCount++;
+                    lastUpdateEl.innerText = `LAST_UPDATE: ${newData.timestamp}`;
+                    updateMetrics();
+                }
+            )
+            .subscribe();
+
+        // Adicionando keyframes para o brilho de nova linha
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes highlight {
+                0% { background: rgba(0, 242, 255, 0.2); }
+                100% { background: transparent; }
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
+
 </html>
