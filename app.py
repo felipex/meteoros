@@ -29,6 +29,7 @@ def index():
         
         # Calcula alguns stats simples para o dashboard
         total_leituras = len(dados)
+        print(dados)
         estacoes_ativas = len(set([d['nome'] for d in dados if d.get('status') is True]))
         
         return render_template(

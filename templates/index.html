@@ -261,7 +261,8 @@
             <thead>
                 <tr>
                     <th>Estação</th>
-                    <th>Status</th>
+                    <th>PC Status</th>
+                    <th>RMS Status</th>
                     <th>Timestamp</th>
                     <th>ID</th>
                 </tr>
@@ -273,6 +274,11 @@
                     <td>
                         <span class="status-badge {{ 'status-on' if item.status else 'status-off' }}">
                             {{ 'Online' if item.status else 'Offline' }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="status-badge {{ 'status-on' if item.rms_status else 'status-off' }}">
+                            {{ 'Online' if item.rms_status else 'Offline' }}
                         </span>
                     </td>
                     <td class="timestamp">{{ item.timestamp }}</td>
@@ -343,11 +349,19 @@
                     const statusClass = newData.status ? 'status-on' : 'status-off';
                     const statusText = newData.status ? 'Online' : 'Offline';
 
+                    const rmsStatusClass = newData.rms_status ? 'status-on' : 'status-off';
+                    const rmsStatusText = newData.rms_status ? 'Online' : 'Offline';
+
                     row.innerHTML = `
                         <td style="font-weight: 600;">${newData.nome}</td>
                         <td>
                             <span class="status-badge ${statusClass}">
                                 ${statusText}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="status-badge ${rmsStatusClass}">
+                                ${rmsStatusText}
                             </span>
                         </td>
                         <td class="timestamp">${newData.timestamp}</td>

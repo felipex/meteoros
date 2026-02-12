@@ -26,14 +26,15 @@ except Exception as e:
     print(f"❌ Erro ao inicializar cliente Supabase: {e}")
     exit(1)
 
-def inserir_dados_estacao(nome_estacao: str = "ESTACAO01", status: bool = True):
+def inserir_dados_estacao(nome_estacao: str = "ESTACAO01", status: bool = True, rms_status: bool = True):
     """
     Insere telemetria de uma estação no Supabase.
     """
     dados = {
         "nome": nome_estacao,
         "timestamp": datetime.now().isoformat(),
-        "status": status
+        "status": status,
+        "rms_status": rms_status
     }
 
     try:
@@ -60,7 +61,9 @@ if __name__ == "__main__":
     # Exemplo: python insert_meteo.py ESTACAO_ALPHA
     if len(sys.argv) > 1:
         estacao_alvo = sys.argv[1]
+        rms_status = sys.argv[2]
     else:
         estacao_alvo = ESTACAO or "ESTACAO_PADRAO"
+        rms_status = True
 
-    inserir_dados_estacao(estacao_alvo)
+    inserir_dados_estacao(estacao_alvo, True, rms_status)
